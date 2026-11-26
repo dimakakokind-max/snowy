@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snow by with max</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cinzel:wght@400;700&family=Montserrat:wght@300;400;600;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            box-sizing: border-box;
+            cursor: none !important; 
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --gold: #D4AF37;
+            --gold-light: #FFF0B3;
+            --gold-dark: #997A00;
+            --orange: #FF8C00;
+            --bg-dark: #030303;
+            --bg-glass: rgba(20, 20, 20, 0.15); /* Еще более прозрачное стекло */
+            --border-glass: rgba(255, 255, 255, 0.08); /* iOS-шный светлый бордер */
+            --border-highlight: rgba(255, 255, 255, 0.25); /* Яркий блик */
+            --text-main: #FFFFFF;
+            --text-muted: #A0A0A0;
+            --font-angel: 'Great Vibes', cursive;
+            --font-display: 'Syne', sans-serif;
+            --font-heading: 'Cinzel', serif;
+            --font-body: 'Montserrat', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            overflow-x: hidden;
+            line-height: 1.7;
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(255, 140, 0, 0.1), transparent 50%),
+                radial-gradient(circle at 10% 90%, rgba(212, 175, 55, 0.05), transparent 40%);
+            background-attachment: fixed;
+        }
+
+        /* --- ЗОЛОТОЕ СВЕЧЕНИЕ ТЕКСТА --- */
+        p, h2, h3, h4, span, a, footer, .thought-bubble {
+            text-shadow: 
+                0 0 10px rgba(212, 175, 55, 0.4),
+                0 0 20px rgba(255, 140, 0, 0.2),
+                0 2px 4px rgba(0, 0, 0, 0.9);
+        }
+
+        /* --- iOS 26 ЖИДКОЕ СТЕКЛО (БАЗА) --- */
+        .ios-glass {
+            background: var(--bg-glass);
+            backdrop-filter: blur(30px) saturate(150%);
+            -webkit-backdrop-filter: blur(30px) saturate(150%);
+            border: 1px solid var(--border-glass);
+            border-top-color: var(--border-highlight);
+            border-left-color: var(--border-highlight);
+            box-shadow: 
+                0 20px 50px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Блик на стекле, двигающийся за мышкой */
+        .ios-glass::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(
+                circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+                rgba(255, 255, 255, 0.15) 0%,
+                transparent 50%
+            );
+            pointer-events: none;
+            z-index: 1;
+            transition: opacity 0.3s;
+        }
+
+        /* --- ПЛАВАЮЩИЕ МЫСЛИ --- */
+        .thoughts-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 999;
+            overflow: hidden;
+        }
+
+        .thought-bubble {
+            position: absolute;
+            padding: 15px 30px;
+            background: rgba(15, 15, 15, 0.4);
+            backdrop-filter: blur(20px) saturate(150%);
+            -webkit-backdrop-filter: blur(20px) saturate(150%);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-top-color: rgba(255, 255, 255, 0.4);
+            border-left-color: rgba(255, 255, 255, 0.4);
+            border-radius: 30px;
+            color: var(--gold-light);
+            font-family: var(--font-heading);
+            font-size: 1.1rem;
+            font-style: italic;
+            box-shadow: 
+                0 15px 35px rgba(0, 0, 0, 0.6),
+                0 0 20px rgba(255, 140, 0, 0.1) inset;
+            white-space: nowrap;
+            background-image: linear-gradient(120deg, var(--gold-light), var(--orange), var(--gold-light));
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.8);
+            transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+            will-change: top, left, opacity, transform;
+        }
+
+        .thought-bubble.visible {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .thought-bubble.float {
+            animation: thoughtFloat 4s ease-in-out infinite alternate;
+        }
+
+        @keyframes thoughtFloat {
+            0% { margin-top: 0; margin-left: 0; }
+            100% { margin-top: -15px; margin-left: 10px; }
+        }
+
+        /* --- КУРСОР --- */
+        .custom-cursor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 40px;
+            height: 40px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s cubic-bezier(0.19, 1, 0.22, 1), height 0.3s cubic-bezier(0.19, 1, 0.22, 1), background-color 0.3s, border-color 0.3s;
+            box-shadow: 0 0 20px rgba(255, 140, 0, 0.3);
+            mix-blend-mode: screen;
+            backdrop-filter: blur(2px);
+            will-change: transform, left, top;
+        }
+
+        .custom-cursor-dot {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 6px;
+            height: 6px;
+            background-color: #FFFFFF;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10000;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 15px #FFF, 0 0 30px var(--orange);
+            will-change: transform, left, top;
+        }
+
+        body.hovering .custom-cursor {
+            width: 70px;
+            height: 70px;
+            background-color: rgba(255, 140, 0, 0.15);
+            border-color: var(--gold-light);
+            box-shadow: 0 0 40px rgba(255, 140, 0, 0.6);
+        }
+
+        /* --- НАВИГАЦИЯ --- */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 15px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(5, 5, 5, 0.2);
+            backdrop-filter: blur(30px) saturate(150%);
+            -webkit-backdrop-filter: blur(30px) saturate(150%);
+            z-index: 1000;
+            border-bottom: 1px solid var(--border-glass);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo {
+            font-family: var(--font-angel);
+            font-size: 2.8rem;
+            color: var(--gold-light);
+            letter-spacing: 2px;
+            text-shadow: 0 0 30px rgba(255, 140, 0, 0.8), 0 0 60px rgba(212, 175, 55, 0.6);
+        }
+
+        .nav-links a {
+            color: var(--text-main);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-left: 30px;
+            transition: color 0.3s, text-shadow 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--gold-light);
+            text-shadow: 0 0 15px var(--orange);
+        }
+
+        /* --- HERO SECTION --- */
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Пульсирующее свечение сзади */
+        .hero-glow {
+            position: absolute;
+            width: 60vw;
+            height: 60vw;
+            background: radial-gradient(circle, rgba(255, 140, 0, 0.2) 0%, rgba(212, 175, 55, 0.1) 30%, transparent 70%);
+            filter: blur(100px);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 0;
+            pointer-events: none;
+            animation: pulseGlow 6s infinite alternate ease-in-out;
+        }
+
+        @keyframes pulseGlow {
+            0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.7; }
+            100% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+        }
+
+        .hero h1 {
+            font-family: var(--font-angel);
+            font-size: 14rem;
+            margin: 0;
+            font-weight: 400;
+            letter-spacing: 5px;
+            position: relative;
+            z-index: 1;
+            background: linear-gradient(120deg, #FFF0B3, #FFD700, #FF8C00, #FFD700, #FFF0B3);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: transparent;
+            animation: gradientShift 4s ease-in-out infinite, floatTitle 6s ease-in-out infinite;
+            filter: drop-shadow(0 0 40px rgba(255, 140, 0, 0.4));
+        }
+
+        .hero p {
+            font-family: var(--font-heading);
+            font-size: 2rem;
+            color: var(--gold-light);
+            letter-spacing: 20px;
+            text-transform: uppercase;
+            margin-top: 20px;
+            font-weight: 700;
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes floatTitle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        /* --- СЕКЦИИ --- */
+        section {
+            padding: 150px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+        }
+
+        .section-title {
+            font-family: var(--font-angel);
+            font-size: 5rem;
+            margin-bottom: 20px;
+            color: var(--gold-light);
+            text-shadow: 0 0 40px var(--orange), 0 0 80px var(--gold);
+            text-align: center;
+        }
+
+        .section-subtitle {
+            color: var(--text-muted);
+            margin-bottom: 70px;
+            font-size: 1.2rem;
+            text-align: center;
+            letter-spacing: 2px;
+            font-weight: 300;
+        }
+
+        /* --- КАРТОЧКИ iOS 26 --- */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 40px;
+        }
+
+        .feature-card {
+            padding: 50px 40px;
+            border-radius: 28px;
+            transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            border-color: rgba(255, 140, 0, 0.4);
+            box-shadow: 
+                0 30px 60px rgba(0, 0, 0, 0.8),
+                0 0 50px rgba(255, 140, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .feature-card h3 {
+            font-family: var(--font-heading);
+            font-size: 1.6rem;
+            color: var(--gold-light);
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 1rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* --- СКАЧИВАНИЕ --- */
+        .download-section {
+            text-align: center;
+            border-radius: 40px;
+            margin-bottom: 120px;
+            padding: 80px 20px;
+        }
+
+        .info-grid {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 60px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 2;
+        }
+
+        .info-item {
+            text-align: center;
+            padding: 25px 45px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+        
+        .info-item:hover {
+            transform: translateY(-5px);
+            border-color: rgba(255, 140, 0, 0.4);
+            box-shadow: 0 10px 30px rgba(255, 140, 0, 0.15);
+        }
+
+        .info-label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 8px;
+        }
+
+        .info-value {
+            font-family: var(--font-display);
+            font-size: 1.8rem;
+            color: var(--gold-light);
+        }
+
+        .btn-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-top: 20px;
+            z-index: 2;
+        }
+
+        .pointer-hint {
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 140, 0, 0.1);
+            border: 1px solid var(--orange);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: bounceHint 2s infinite, glowHint 2s infinite;
+            box-shadow: 0 0 30px rgba(255, 140, 0, 0.4);
+            pointer-events: none;
+            backdrop-filter: blur(10px);
+        }
+
+        .pointer-hint::after {
+            content: '';
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 12px solid var(--gold-light);
+            margin-top: 6px;
+        }
+
+        @keyframes bounceHint {
+            0%, 100% { transform: translate(-50%, 0); }
+            50% { transform: translate(-50%, 12px); }
+        }
+
+        @keyframes glowHint {
+            0%, 100% { box-shadow: 0 0 15px rgba(255, 140, 0, 0.2); }
+            50% { box-shadow: 0 0 40px rgba(255, 140, 0, 0.7); }
+        }
+
+        /* iOS 26 Кнопка с жидким светом */
+        .btn-download {
+            display: inline-block;
+            padding: 25px 80px;
+            font-family: var(--font-body);
+            font-size: 1.2rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-decoration: none;
+            color: #000;
+            background: linear-gradient(135deg, #FFF0B3, #FFD700, #FF8C00);
+            background-size: 200% 200%;
+            border-radius: 20px;
+            transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                0 15px 40px rgba(255, 140, 0, 0.3),
+                inset 0 2px 0 rgba(255, 255, 255, 0.6);
+            animation: btnGradient 4s infinite;
+        }
+
+        /* Блик на кнопке */
+        .btn-download::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+            transform: skewX(-20deg);
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0% { left: -100%; }
+            20% { left: 100%; }
+            100% { left: 100%; }
+        }
+
+        @keyframes btnGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .btn-download:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 
+                0 25px 60px rgba(255, 140, 0, 0.5),
+                0 0 80px rgba(255, 140, 0, 0.3),
+                inset 0 2px 0 rgba(255, 255, 255, 0.8);
+        }
+
+        .password-text {
+            margin-top: 50px;
+            font-size: 1rem;
+            color: var(--text-muted);
+            background: rgba(0, 0, 0, 0.3);
+            display: inline-block;
+            padding: 15px 30px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            position: relative;
+            z-index: 2;
+        }
+
+        .password-text a {
+            color: var(--gold-light);
+            text-decoration: none;
+            font-weight: 800;
+            transition: all 0.3s;
+        }
+
+        .password-text a:hover {
+            color: var(--orange);
+            text-shadow: 0 0 20px var(--orange);
+        }
+
+        /* --- КОНТАКТЫ --- */
+        .contact-section {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 60px;
+            flex-wrap: wrap;
+        }
+
+        .contact-content {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .contact-content h2 {
+            font-family: var(--font-angel);
+            font-size: 4.5rem;
+            color: var(--gold-light);
+            margin-bottom: 20px;
+        }
+
+        .contact-content p {
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            font-size: 1.2rem;
+        }
+
+        .tg-btn {
+            display: inline-block;
+            padding: 20px 50px;
+            border: 1px solid rgba(212, 175, 55, 0.5);
+            color: var(--gold-light);
+            text-decoration: none;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border-radius: 16px;
+            transition: all 0.4s;
+            background: rgba(255, 140, 0, 0.05);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 20px rgba(255, 140, 0, 0.1);
+        }
+
+        .tg-btn:hover {
+            background: var(--orange);
+            color: #000;
+            box-shadow: 0 0 50px rgba(255, 140, 0, 0.5);
+            border-color: var(--orange);
+            transform: translateY(-3px);
+        }
+
+        .contact-card {
+            padding: 60px 50px;
+            border-radius: 32px;
+            flex: 1;
+            min-width: 300px;
+            text-align: center;
+        }
+
+        .contact-card h4 {
+            font-family: var(--font-angel);
+            font-size: 3.5rem;
+            color: var(--gold-light);
+            margin-bottom: 10px;
+        }
+
+        .contact-card .role {
+            color: var(--orange);
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            margin-bottom: 25px;
+            font-weight: 700;
+        }
+
+        /* --- FOOTER --- */
+        footer {
+            text-align: center;
+            padding: 60px 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            background: rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 10;
+        }
+
+        /* --- АДАПТИВНОСТЬ --- */
+        @media (max-width: 768px) {
+            nav { padding: 15px 20px; }
+            .nav-links { display: none; }
+            .hero h1 { font-size: 7rem; }
+            .hero p { font-size: 1.2rem; letter-spacing: 5px; }
+            .section-title { font-size: 3.5rem; }
+            .contact-section { flex-direction: column; }
+            .btn-download { padding: 20px 40px; font-size: 1rem; }
+            .thought-bubble { font-size: 0.9rem; padding: 12px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- МЫСЛИ -->
+    <div class="thoughts-container" id="thoughts-container"></div>
+
+    <!-- КУРСОР -->
+    <div class="custom-cursor" id="cursor"></div>
+    <div class="custom-cursor-dot" id="cursor-dot"></div>
+
+    <!-- ОБЕРТКА ДЛЯ ПАРАЛЛАКСА -->
+    <div class="content-wrapper" id="content-wrapper">
+        
+        <!-- НАВИГАЦИЯ -->
+        <nav>
+            <div class="logo">Snow</div>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#download">Download</a>
+                <a href="#contact">Contact</a>
+            </div>
+        </nav>
+
+        <!-- ГЛАВНЫЙ ЭКРАН -->
+        <header class="hero">
+            <div class="hero-glow"></div>
+            <h1>Snow</h1>
+            <p>by with max</p>
+        </header>
+
+        <!-- ФИЧИ -->
+        <section id="features">
+            <h2 class="section-title">System Features</h2>
+            <p class="section-subtitle">Optimized for maximum performance and visual quality.</p>
+            
+            <div class="features-grid">
+                <div class="feature-card ios-glass">
+                    <h3>Real-time Physics</h3>
+                    <p>Advanced calculation of drift, wind resistance, and falling speed for every single snowflake without CPU overload.</p>
+                </div>
+                <div class="feature-card ios-glass">
+                    <h3>Customizable Interface</h3>
+                    <p>Complete control over size, color, opacity, and glow effects directly from the built-in settings menu.</p>
+                </div>
+                <div class="feature-card ios-glass">
+                    <h3>Native Transparency</h3>
+                    <p>Uses Windows API layered windows. The background remains completely interactive with zero impact on your workflow.</p>
+                </div>
+                <div class="feature-card ios-glass">
+                    <h3>Hardware Optimized</h3>
+                    <p>Written in pure Python with table-driven math. Stable 60 FPS regardless of snow density.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- СКАЧИВАНИЕ -->
+        <section id="download" class="download-section ios-glass">
+            <h2 class="section-title">Get Snow</h2>
+            <p class="section-subtitle">Secure download. No third-party installers.</p>
+
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Version</span>
+                    <span class="info-value">1.0</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">File Size</span>
+                    <span class="info-value">~15 MB</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Platform</span>
+                    <span class="info-value">Windows</span>
+                </div>
+            </div>
+
+            <div class="btn-wrapper">
+                <div class="pointer-hint"></div>
+                <a href="https://drive.usercontent.google.com/download?id=1HuCV6cohZcyi2BZbro6_Eoz7KVC4sHk_&export=download&authuser=0" 
+                   class="btn-download" 
+                   target="_blank" 
+                   rel="noopener noreferrer">
+                    Download Now
+                </a>
+            </div>
+
+            <div class="password-text">
+                The archive is password protected. To get the password, contact us on Telegram:<br><br>
+                <a href="https://t.me/coderseasy" target="_blank" rel="noopener noreferrer">@coderseasy</a>
+            </div>
+        </section>
+
+        <!-- КОНТАКТЫ -->
+        <section id="contact" class="contact-section">
+            <div class="contact-content">
+                <h2>About The Project</h2>
+                <p>Snow was built with a focus on clean code, minimal system impact, and an immersive desktop aesthetic. Whether you need a subtle winter mood or a full-screen blizzard, the engine adapts instantly.</p>
+                <a href="https://t.me/coderseasy" class="tg-btn" target="_blank" rel="noopener noreferrer">Contact on Telegram</a>
+            </div>
+            
+            <div class="contact-card ios-glass">
+                <h4>Snow by with max</h4>
+                <div class="role">Lead Developer</div>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0;">Developed using Python, Win32 API, and Tkinter.</p>
+            </div>
+        </section>
+
+        <!-- ФУТЕР -->
+        <footer>
+            &copy; 2024 Snow by with max. All rights reserved.
+        </footer>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.29/bundled/lenis.min.js"></script>
+
+    <script>
+        // --- 1. ПЛАВНЫЙ СКРОЛЛ ---
+        const lenis = new Lenis({
+            duration: 1.5,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            smooth: true,
+        });
+
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+
+        // --- 2. КАСТОМНЫЙ КУРСОР (ИНЕРЦИЯ) ---
+        const cursor = document.getElementById('cursor');
+        const cursorDot = document.getElementById('cursor-dot');
+        let mouseX = 0, mouseY = 0, cursorX = 0, cursorY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            cursorDot.style.left = mouseX + 'px';
+            cursorDot.style.top = mouseY + 'px';
+
+            // iOS 26 Эффект блика на стекле
+            document.querySelectorAll('.ios-glass').forEach(el => {
+                const rect = el.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                el.style.setProperty('--mouse-x', `${x}%`);
+                el.style.setProperty('--mouse-y', `${y}%`);
+            });
+        });
+
+        function animateCursor() {
+            cursorX += (mouseX - cursorX) * 0.15;
+            cursorY += (mouseY - cursorY) * 0.15;
+            cursor.style.left = cursorX + 'px';
+            cursor.style.top = cursorY + 'px';
+            requestAnimationFrame(animateCursor);
+        }
+        animateCursor();
+
+        // --- 3. ЭФФЕКТ "ДЫХАНИЯ" САЙТА (ПАРАЛЛАКС) ---
+        const wrapper = document.getElementById('content-wrapper');
+        let targetX = 0, targetY = 0, currentX = 0, currentY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            targetX = (e.clientX / window.innerWidth - 0.5) * 15;
+            targetY = (e.clientY / window.innerHeight - 0.5) * 15;
+        });
+
+        function animateParallax() {
+            currentX += (targetX - currentX) * 0.05;
+            currentY += (targetY - currentY) * 0.05;
+            wrapper.style.transform = `translate(${currentX}px, ${currentY}px)`;
+            requestAnimationFrame(animateParallax);
+        }
+        animateParallax();
+
+        // --- 4. ЛОГИКА ПЛАВАЮЩИХ МЫСЛЕЙ (ВЫЛЕТАЮТ, УЛЕТАЮТ, МЕНЯЮТ МЕСТА) ---
+        const thoughtsContainer = document.getElementById('thoughts-container');
+        const thoughtsList = [
+            "Pure winter atmosphere",
+            "Liquid glass physics",
+            "Zero CPU impact",
+            "Golden snowflakes",
+            "Feel the magic",
+            "Seamless integration",
+            "Native transparency",
+            "Fluid motion",
+            "Elegant design"
+        ];
+
+        function getRandomPosition() {
+            // Отступы от краев, чтобы мысли не обрезались
+            const padding = 15; 
+            const top = Math.random() * (70 - padding) + padding;
+            const left = Math.random() * (80 - padding) + padding;
+            return { top: `${top}%`, left: `${left}%` };
+        }
+
+        function spawnThought() {
+            const bubble = document.createElement('div');
+            bubble.classList.add('thought-bubble');
+            
+            // Выбираем случайный текст
+            const text = thoughtsList[Math.floor(Math.random() * thoughtsList.length)];
+            bubble.textContent = text;
+
+            // Ставим в случайное место
+            const pos = getRandomPosition();
+            bubble.style.top = pos.top;
+            bubble.style.left = pos.left;
+
+            thoughtsContainer.appendChild(bubble);
+
+            // Плавное появление
+            setTimeout(() => {
+                bubble.classList.add('visible');
+                // Добавляем плавное покачивание
+                bubble.classList.add('float');
+            }, 50);
+
+            // Через 5-7 секунд мысль плавно улетает
+            const lifespan = Math.random() * 2000 + 5000;
+            setTimeout(() => {
+                bubble.classList.remove('visible');
+                // Удаляем элемент после завершения анимации
+                setTimeout(() => {
+                    bubble.remove();
+                }, 800);
+            }, lifespan);
+        }
+
+        // Запускаем генерацию мыслей каждые 1.5 - 2.5 секунды
+        function thoughtLoop() {
+            spawnThought();
+            const nextSpawn = Math.random() * 1000 + 1500;
+            setTimeout(thoughtLoop, nextSpawn);
+        }
+        thoughtLoop();
+
+        // --- 5. HOVER ЭФФЕКТЫ ---
+        const hoverElements = document.querySelectorAll('a, button, .feature-card, .ios-glass, .info-item');
+        hoverElements.forEach(el => {
+            el.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+            el.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+        });
+    </script>
+</body>
+</html>
